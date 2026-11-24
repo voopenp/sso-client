@@ -1,0 +1,40 @@
+{
+    "name": "voope/sso-client",
+    "description": "Login Voope (SSO da equipe pelo voopesistema) para os sistemas da Voope: OAuth2 com PKCE, identidade e revalidação da sessão.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.1",
+        "illuminate/auth": "^10.0 || ^11.0 || ^12.0 || ^13.0",
+        "illuminate/http": "^10.0 || ^11.0 || ^12.0 || ^13.0",
+        "illuminate/support": "^10.0 || ^11.0 || ^12.0 || ^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0 || ^9.0 || ^10.0 || ^11.0",
+        "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Voope\\SsoClient\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Voope\\SsoClient\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Voope\\SsoClient\\Laravel\\SsoClientServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}
