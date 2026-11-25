@@ -1,13 +1,6 @@
 # voope/sso-client
 
-Login da equipe Voope nos nossos sistemas Laravel, usando a conta do voopesistema (OAuth2 com PKCE).
-Quem pode entrar em cada sistema é definido na tela de Equipe do voopesistema.
-
-Usado no admin do voopeclubes e no voope-starter-kit. Laravel 10 a 13, PHP 8.1+.
-
 ## Instalação
-
-O pacote não está no Packagist, então entra pelo repositório:
 
 ```json
 "repositories": [
@@ -70,7 +63,3 @@ Route::middleware(['auth:admin', RevalidarLoginVoope::para('admin', 'admin.sso.s
 ```
 composer test
 ```
-
-## Versões
-
-- **v0.1.0**: primeira versão, tirada do voopeerp e do voopeclubes.
