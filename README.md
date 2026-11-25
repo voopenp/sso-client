@@ -1,26 +1,13 @@
-# SSO Client — login Voope nos sistemas da Voope
+# voope/sso-client
 
-A equipe entra nos painéis internos (admin do voopeclubes, plataforma do voopeerp, ...) com a conta do
-**voopesistema**, por OAuth2 com PKCE. Quem pode entrar em cada sistema é decidido lá, na tela de Equipe.
+Login da equipe Voope nos nossos sistemas Laravel, usando a conta do voopesistema (OAuth2 com PKCE).
+Quem pode entrar em cada sistema é definido na tela de Equipe do voopesistema.
 
-> **Leia este arquivo inteiro antes de mexer.** É a memória do pacote para qualquer sessão nova (pessoa ou IA).
+Usado no admin do voopeclubes e no voope-starter-kit. Laravel 10 a 13, PHP 8.1+.
 
-## 0. Onde este código vive
+## Instalação
 
-- **Repositório oficial:** `voopenp/sso-client` (privado). Pacote Composer `voope/sso-client`.
-- **Quem usa:** `voopeclubes` (admin). Próximo: `voopeerp` (plataforma), que hoje tem a mesma lógica copiada.
-- **Provedor:** voopesistema (Passport). Rotas `GET /oauth/authorize`, `POST /oauth/token` e `GET /api/sso/eu`.
-- **Laravel 10 a 13, PHP 8.1+.** Versão por tag `vX.Y.Z` (SemVer).
-
-### O que fica no pacote e o que fica no sistema
-
-| Pacote | Sistema |
-|---|---|
-| URL de autorização com PKCE, troca do código, `/api/sso/eu` | Rotas `sso/start` e `sso/callback` |
-| Regras de recusa (erro, state, sem acesso, sem 2FA) | Achar ou criar o usuário local pelo `sub` (ou ligar pelo e-mail) |
-| Token cifrado na sessão e revalidação a cada 15 min | Papel/permissão do usuário local, tela de login, logout, auditoria |
-
-## 1. Instalar
+O pacote não está no Packagist, então entra pelo repositório:
 
 ```json
 "repositories": [
@@ -31,20 +18,24 @@ A equipe entra nos painéis internos (admin do voopeclubes, plataforma do voopee
 }
 ```
 
-`.env` (o `CLIENT_ID`/`SECRET` saem de `php artisan sso:client "Nome" <callback>` no voopesistema):
+No `.env`:
 
 ```
 VOOPE_SSO_URL=https://www.voope.com.br
 VOOPE_SSO_CLIENT_ID=
 VOOPE_SSO_CLIENT_SECRET=
-VOOPE_SSO_REDIRECT=            # opcional: URL fixa do callback
-VOOPE_SSO_ROTA_CALLBACK=       # opcional: nome da rota do callback (padrão sso.callback)
+VOOPE_SSO_REDIRECT=
+VOOPE_SSO_ROTA_CALLBACK=
 ```
 
-Com as três primeiras preenchidas, `LoginVoope::ativo()` é `true`. A convenção é: ativo fecha o login por senha;
-vazio volta ao login por senha (dev e emergência).
+O id e o segredo saem de `php artisan sso:client "Nome do sistema" https://dominio/sso/callback`, rodado no voopesistema.
+As duas últimas são opcionais: URL fixa do callback e nome da rota (padrão `sso.callback`).
 
-## 2. Usar
+Se as três primeiras estiverem vazias, `LoginVoope::ativo()` retorna `false` e o sistema usa só o login por senha.
+
+## Uso
+
+O pacote cuida do OAuth e da revalidação. As rotas, o usuário local e a tela de login ficam no sistema.
 
 ```php
 use Voope\SsoClient\LoginVoope;
@@ -61,22 +52,25 @@ try {
 } catch (SsoException $e) {
     return redirect()->route('login')->with('sso_message', $e->getMessage());
 }
+
 Auth::guard('admin')->login($usuario);
 $request->session()->regenerate();
 
-// rotas protegidas: guard, rota que reinicia o login e coluna com o sub (padrão sso_sub)
+// rotas protegidas: guard, rota do login e coluna com o sub (padrão sso_sub)
 Route::middleware(['auth:admin', RevalidarLoginVoope::para('admin', 'admin.sso.start')])->group(...);
 ```
 
-- `concluir()` só devolve a identidade quando o voopesistema liberou o acesso **e** a pessoa tem 2FA ou passkey.
-- O middleware derruba a sessão que não veio do login Voope, a que teve o acesso revogado e a de outro `sub`.
-  Se o voopesistema estiver fora (`SsoException::$indisponivel`), quem já está dentro continua.
-- Depois do logout, mostre a tela de login com uma mensagem; sem ela, o redirect ao SSO devolve a pessoa logada.
+- `concluir()` só retorna a identidade se o voopesistema liberou o acesso e a pessoa tem 2FA ou passkey.
+- O middleware confere o acesso a cada 15 minutos e encerra a sessão que não veio do login Voope, que teve o acesso
+  revogado ou que é de outro `sub`. Se o voopesistema estiver fora do ar, quem já entrou continua.
+- Se o login redireciona direto para o SSO, mostre a tela com uma mensagem depois do logout. Senão a pessoa volta logada.
 
-## 3. Testes
+## Testes
 
-`composer test` (Testbench). Versão nova: testes passando, histórico abaixo atualizado e tag.
+```
+composer test
+```
 
-## 4. Histórico
+## Versões
 
-- **v0.1.0** — extraído do voopeerp/voopeclubes: PKCE, identidade, exigência de 2FA, revalidação por middleware.
+- **v0.1.0**: primeira versão, tirada do voopeerp e do voopeclubes.
